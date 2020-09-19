@@ -1,0 +1,34 @@
+{
+  "files": {
+    "main.css": "/static/css/main.c354a75e.chunk.css",
+    "main.js": "/static/js/main.8fe716f1.chunk.js",
+    "main.js.map": "/static/js/main.8fe716f1.chunk.js.map",
+    "runtime-main.js": "/static/js/runtime-main.8dc0443e.js",
+    "runtime-main.js.map": "/static/js/runtime-main.8dc0443e.js.map",
+    "static/js/2.62ef00ea.chunk.js": "/static/js/2.62ef00ea.chunk.js",
+    "static/js/2.62ef00ea.chunk.js.map": "/static/js/2.62ef00ea.chunk.js.map",
+    "index.html": "/index.html",
+    "precache-manifest.87d96f9ccfd07e52380f587ab898d326.js": "/precache-manifest.87d96f9ccfd07e52380f587ab898d326.js",
+    "service-worker.js": "/service-worker.js",
+    "static/css/main.c354a75e.chunk.css.map": "/static/css/main.c354a75e.chunk.css.map",
+    "static/js/2.62ef00ea.chunk.js.LICENSE.txt": "/static/js/2.62ef00ea.chunk.js.LICENSE.txt",
+    "static/media/active-online.jpg": "/static/media/active-online.e9de8d0e.jpg",
+    "static/media/aerial-architectural-design-architecture-buildings-373912.jpg": "/static/media/aerial-architectural-design-architecture-buildings-373912.5ffca266.jpg",
+    "static/media/avatar (1).png": "/static/media/avatar (1).9b141430.png",
+    "static/media/discuss.png": "/static/media/discuss.90602547.png",
+    "static/media/game (1).png": "/static/media/game (1).88c51cd1.png",
+    "static/media/gameroom.css": "/static/media/gameroom.b32ae223.jpg",
+    "static/media/gaming.png": "/static/media/gaming.813efcaf.png",
+    "static/media/interface (1).png": "/static/media/interface (1).c926907a.png",
+    "static/media/interface.png": "/static/media/interface.8f7c6a38.png",
+    "static/media/playing-games.jpg": "/static/media/playing-games.aa2e57db.jpg",
+    "static/media/reading-news.jpg": "/static/media/reading-news.f34a1deb.jpg",
+    "static/media/technology (1).png": "/static/media/technology (1).fc6f2484.png"
+  },
+  "entrypoints": [
+    "static/js/runtime-main.8dc0443e.js",
+    "static/js/2.62ef00ea.chunk.js",
+    "static/css/main.c354a75e.chunk.css",
+    "static/js/main.8fe716f1.chunk.js"
+  ]
+}
