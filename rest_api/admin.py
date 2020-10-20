@@ -4,3 +4,6 @@ from .models import *
 
 admin.site.register(UserDetail)
 admin.site.register(News)
+admin.site.register(TriviaGame)
+admin.site.register(UserTriviaGame)
+admin.site.register(UserSudokuGame)

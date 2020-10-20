@@ -13,6 +13,7 @@ class UserDetail(models.Model):
     account_name = models.CharField(max_length=200, null=True, blank=True)
     bank_name = models.CharField(max_length=200, null=True, blank=True)
     account_number = models.CharField(max_length=50, null=True, blank=True)
+    level = models.IntegerField(default=1)
     create_date = models.DateTimeField(auto_now_add=True)
     
 
@@ -39,3 +40,38 @@ class News(models.Model):
     
     def __str__(self):
         return self.title
+
+class TriviaGame(models.Model):
+    difficulty = models.CharField(max_length=50)
+    question = models.TextField()
+    answer = models.CharField(max_length=250)
+    options = models.TextField()
+    active = models.BooleanField(default=True)
+    created_date = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.question
+
+class UserTriviaGame(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="trivia_game")
+    difficulty = models.CharField(max_length=50)
+    question = models.TextField()
+    answer = models.CharField(max_length=250)
+    options = models.TextField()
+    answered = models.BooleanField(default=False)
+    active = models.BooleanField(default=True)
+    created_date = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.user.username
+
+
+class UserSudokuGame(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="sudoku_game")
+    difficulty = models.CharField(max_length=50)
+    answered = models.BooleanField(default=False)
+    active = models.BooleanField(default=True)
+    created_date = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.user.username
