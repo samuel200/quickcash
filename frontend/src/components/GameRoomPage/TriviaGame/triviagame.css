@@ -1,0 +1,175 @@
+#trivia-game {
+  background-color: rgb(42, 42, 83);
+  min-height: 100vh;
+  padding: 40px 0px;
+}
+
+.trivia-question-holder {
+  border-radius: 10px;
+  padding: 30px;
+  color: white;
+  background-color: rgb(85, 85, 170);
+  height: 250px;
+  margin-top: 40px;
+  position: relative;
+}
+
+.trivia-question-holder,
+.trivia-options-holder {
+  width: 90%;
+  margin: auto;
+}
+
+.trivia-question-holder h2 {
+  margin: 0px;
+  font-size: 32px;
+  margin-top: 20px;
+}
+
+.trivia-question-holder h2 b {
+  font-size: inherit;
+}
+
+.trivia-question-holder .timer {
+  font-size: 18px;
+  font-weight: bold;
+  padding: 10px;
+  border: 2px solid white;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  text-align: center;
+  position: absolute;
+  right: 25px;
+  bottom: 25px;
+}
+
+.trivia-options-holder {
+  margin-top: 40px;
+}
+
+.trivia-options-holder .option {
+  background-color: rgb(85, 85, 170);
+  padding: 15px;
+  border-radius: 5px;
+  margin: 20px;
+  width: 90%;
+}
+
+.trivia-options-holder .option span {
+  color: white;
+  font-weight: 700;
+  font-size: 16px;
+  text-transform: capitalize;
+}
+
+.trivia-options-holder button {
+  width: 50%;
+  font-weight: bold;
+  font-size: 18px;
+  display: block;
+  margin: auto;
+  margin-top: 30px;
+  height: 60px;
+}
+
+/* Message Animation */
+
+.overlay{
+    min-width: 100vw;
+    min-height: 100vh;
+    position: fixed;
+    top: 0px;
+    left: 0px;
+    background: rgba(0,0,0,.7);
+}
+
+#message-board{
+    background: white;
+    padding: 30px;
+    border-radius: 10px;
+    width: 400px;
+    margin: auto;
+    position: fixed;
+    top: -500px;
+    right: calc(50vw - (400px/2));
+    transition: all .5s ease-in;
+}
+
+#message-board.m-show{
+    top: 50px;
+}
+
+#message-board button{
+    min-width: 100px;
+    height: 50px;
+    font-size: 16px;
+    font-family: inherit;
+}
+
+#message-board svg {
+  width: 100px;
+  display: block;
+  margin: 40px auto 0;
+}
+#message-board .path {
+  stroke-dasharray: 1000;
+  stroke-dashoffset: 0;
+}
+#message-board .path.circle {
+  -webkit-animation: dash 0.9s ease-in-out;
+  animation: dash 0.9s ease-in-out;
+}
+#message-board .path.line {
+  stroke-dashoffset: 1000;
+  -webkit-animation: dash 0.9s 0.35s ease-in-out forwards;
+  animation: dash 0.9s 0.35s ease-in-out forwards;
+}
+#message-board .path.check {
+  stroke-dashoffset: -100;
+  -webkit-animation: dash-check 0.9s 0.35s ease-in-out forwards;
+  animation: dash-check 0.9s 0.35s ease-in-out forwards;
+}
+#message-board p {
+  text-align: center;
+  margin: 20px 0 60px;
+  font-size: 1.25em;
+}
+#message-board p.success {
+  color: #73af55;
+}
+#message-board p.error {
+  color: #d06079;
+}
+@-webkit-keyframes dash {
+  0% {
+    stroke-dashoffset: 1000;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes dash {
+  0% {
+    stroke-dashoffset: 1000;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+@-webkit-keyframes dash-check {
+  0% {
+    stroke-dashoffset: -100;
+  }
+  100% {
+    stroke-dashoffset: 900;
+  }
+}
+@keyframes dash-check {
+  0% {
+    stroke-dashoffset: -100;
+  }
+  100% {
+    stroke-dashoffset: 900;
+  }
+}

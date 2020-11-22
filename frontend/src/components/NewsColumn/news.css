@@ -1,0 +1,38 @@
+#news-head,
+#news-body,
+#news-foot{
+    padding: 0px 40px;
+}
+
+#news-head{
+    padding-top: 40px;
+}
+
+#news-foot{
+    margin: 80px auto;
+}
+
+#news-foot a{
+    font-size: 14px;
+}
+
+#news-head > div,
+#news-foot{
+    display: flex;
+    justify-content: space-between;
+}
+
+#news-head img{
+    width: 100%;
+    height: 350px;
+}
+
+#news-head span{
+    font-weight: 600;
+    color: rgb(83, 83, 83);
+}
+
+#news-head > div span:first-of-type{
+    padding: 5px;
+    border-bottom: 2px solid rgb(177, 177, 177);
+}

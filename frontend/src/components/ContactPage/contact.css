@@ -1,0 +1,129 @@
+.contact-page{
+    position: relative;
+    background: transparent;
+    min-width: 100%;
+    max-width: 100%;
+    /* height: 80vh; */
+    overflow: hidden;
+    padding: 40px 0px;
+}
+
+.contact-page::before{
+    content: "";
+    display: block;
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    min-width: 100%;
+    max-width: 100%;
+    height: 100%;
+    background-image: url(../../img/aerial-architectural-design-architecture-buildings-373912.jpg);
+    background-size: cover;
+    background-repeat: no-repeat;
+    filter: blur(2px);
+    z-index: -1;
+}
+.contact-section{
+    background-color: white;
+    border-radius: 20px;
+    z-index: 3;
+    margin: auto;
+    width: 70%;
+    padding: 30px;
+}
+
+.contact-section h2, .contact-section h3{
+    font-family: raleway !important;
+    text-transform: capitalize;
+    font-weight: 600;
+}
+
+.contact-section p{
+    color: #757575;
+    font-weight: 600;
+}
+
+.contact-info-side,
+.form-side{
+    text-align: center;
+}
+
+.contact-info-side{
+    border-right: 1px solid rgb(167, 167, 167);
+}
+
+.contact-info-side img{
+    width: 30px;
+    height: 30px;
+}
+
+.contact-section h2{
+    font-size: 32px;
+}
+
+.contact-info-side h3{
+    font-size: 24px;
+}
+
+.contact-section p{
+    font-size: 14px;
+}
+
+.contact-info-side .body-item{
+    padding: 20px 0px;
+}
+
+.form-holder{
+    padding:  0px 50px;
+    text-align: left;
+    margin-top: 40px;
+}
+
+.form-holder input{
+    box-sizing: border-box !important;
+}
+
+.form-holder button{
+    background-color: #060D2B !important;
+}
+
+@media screen and (max-width: 760px){
+    .contact-section{
+        width: 80%;
+        padding: 10px;
+    }
+}
+
+@media screen and (max-width: 540px){
+    .contact-section{
+        width: 85%;
+    }
+
+    #auth-form-holder{
+        width: 90% !important;
+    }
+
+    .home-footer{
+        flex-wrap: wrap;
+    }
+
+    .home-footer a{
+        display: block;
+        min-width: 40%;
+        margin-bottom: 20px;
+    }
+}
+
+@media screen and (max-width: 450px){
+    .contact-section{
+        width: 90%;
+    }
+
+    .home-footer a{
+        min-width: 90%;
+    }
+
+    .slides li h3{
+        font-size: 28px;
+    }
+}
