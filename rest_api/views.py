@@ -14,11 +14,15 @@ from rest_framework.authtoken.models import Token
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate, login
 
-from .models import UserDetail, News, TriviaGame, UserTriviaGame, UserSudokuGame
-from .serializers import UserDetailSerializer, UserSerializer, NewsSerializer, UserTriviaGameSerializer
+from .models import UserDetail, News, TriviaGame, UserTriviaGame, UserSudokuGame, ImagePuzzleGame, UserImagePuzzleGame
+from .serializers import *
+from .board import Board
 
+import stripe
 import requests
 import json
+
+stripe_secret_key = "sk_test_sXkDKWHNGkTCr4ecv5dT1Tgr00Cx4zpeTC"
 
 # Create your views here.
 @api_view(['GET'])
@@ -117,8 +121,14 @@ class UserView(APIView):
 
         user_serializer = UserSerializer(user)
         user_detail_serializer = UserDetailSerializer(user_detail)
-        referrals = get_refferal_users(user_detail.referrals)
-        return Response(status=200, data={**user_serializer.data, **user_detail_serializer.data, "referrals": referrals})
+        referrals = get_refferal_users(user_detail.referrals.all())
+        transactions = TransactionSerializer(request.user.transaction.all(), many=True).data
+            
+        #getting the progress of the games
+        trivia_count = request.user.trivia_game.filter(answered=True).count()
+        sudoku_count = request.user.sudoku_game.filter(answered=True).count()
+        image_puzzle_count = request.user.image_puzzle_game.filter(answered=True).count()
+        return Response(status=200, data={**user_serializer.data, **user_detail_serializer.data, "referrals": referrals,"transactions": transactions, "games":{"trivia": trivia_count, "sudoku": sudoku_count, "image_puzzle": image_puzzle_count}})
 
     def put(self, request):
         user_data = {
@@ -143,7 +153,13 @@ class UserView(APIView):
             user_serializer.save()
             user_detail_serializer.save()
             referrals = get_refferal_users(user_detail.referrals)
-            return Response(status=200, data={**user_serializer.data, **user_detail_serializer.data, "referrals": referrals})
+            transactions = TransactionSerializer(request.user.transaction.all(), many=True).data
+            
+            #getting the progress of the games
+            trivia_count = request.user.trivia_game.filter(answered=True).count()
+            sudoku_count = request.user.sudoku_game.filter(answered=True).count()
+            image_puzzle_count = request.user.image_puzzle_game.filter(answered=True).count()
+            return Response(status=200, data={**user_serializer.data, **user_detail_serializer.data, "referrals": referrals, 'transactions': transactions, "games":{"trivia": trivia_count, "sudoku": sudoku_count, "image_puzzle": image_puzzle_count}})
 
         else:
             return Response(status=402, data={"error_message": user_serializer.errors})
@@ -164,7 +180,13 @@ class AccountDetailsView(APIView):
             # return Response(data=serializer.data, status=201)
             user_data = UserSerializer(request.user).data
             referrals = get_refferal_users(user_detail.referrals)
-            return Response(data={**user_data, **serializer.data, "referrals": referrals}, status=200)
+            transactions = TransactionSerializer(request.user.transaction.all(), many=True).data
+            
+            #getting the progress of the games
+            trivia_count = request.user.trivia_game.filter(answered=True).count()
+            sudoku_count = request.user.sudoku_game.filter(answered=True).count()
+            image_puzzle_count = request.user.image_puzzle_game.filter(answered=True).count()
+            return Response(data={**user_data, **serializer.data, "referrals": referrals, 'transactions': transactions, "games":{"trivia": trivia_count, "sudoku": sudoku_count, "image_puzzle": image_puzzle_count}}, status=200)
 
         return Response(status=200)
 
@@ -182,10 +204,64 @@ class AccountDetailsView(APIView):
         if user_detail_serializer_edit.is_valid():
             user_detail_serializer_edit.save()
             referrals = get_refferal_users(user_detail.referrals)
-            return Response(status=200, data={**(UserSerializer(user).data), **(UserDetailSerializer(user_detail).data), "referrals": referrals})
+            transactions = TransactionSerializer(request.user.transaction.all(), many=True).data
+            
+            #getting the progress of the games
+            trivia_count = request.user.trivia_game.filter(answered=True).count()
+            sudoku_count = request.user.sudoku_game.filter(answered=True).count()
+            image_puzzle_count = request.user.image_puzzle_game.filter(answered=True).count()
+            return Response(status=200, data={**(UserSerializer(user).data), **(UserDetailSerializer(user_detail).data), "referrals": referrals, 'transactions': transactions, "games":{"trivia": trivia_count, "sudoku": sudoku_count, "image_puzzle": image_puzzle_count}})
 
         else:
             return Response(status=402, data={"error_message": "Error editing account details."})
+
+#Add post save to update transactions.
+class WithdrawalView(APIView):
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [TokenAuthentication]
+
+    def post(self, request):
+        amount = request.data.get('amount', None)
+        user_detail = UserDetail.objects.get(user=request.user)
+        total_earnings = user_detail.referral_earnings + user_detail.game_earnings
+
+        if amount:
+            if amount < 5000:
+                return Response(status=200, data={'error_message': "Amount is less than minimum withdrawal limit"})
+            elif amount > total_earnings:
+                return Response(status=200, data={'error_message': "Amount is higher than your total earnings"})
+            else:
+                withdrawal = Transaction(user= request.user, trans_type="withdrawal", amount=amount)
+                withdrawal_serializer = TransactionSerializer(withdrawal)
+                withdrawal.save()
+                return Response(status=200, data={'msg': "Withdrawal request was made successfully", 'transaction': withdrawal_serializer.data})
+        else:
+            return Response(status=400, data={'error_message': "Missing amount query"})
+
+
+class DepositView(APIView):
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [TokenAuthentication]
+
+    def post(self, request):
+        stripeToken = request.data.get('stripeToken', None)
+        amount = request.data.get('amount', None)
+        print(stripeToken, amount)
+
+        if stripeToken and amount:
+            try:
+                customer = stripe.Customer.create(api_key=stripe_secret_key, 
+                                        name=request.user.first_name,
+                                        email=request.user.email)
+                charge = stripe.Charge.create(api_key=stripe_secret_key, customer=customer, currency="usd", amount=amount*100, description="Quick cash game earning top up", source=stripeToken)
+            except:
+                return Response(status=400, data={'error_message': 'error making payment'.capitalize()})
+
+            transaction = Transaction(amount=amount, trans_type="deposit", user=request.user, status=True)
+            transaction.save()
+            return Response(status=200, data={'msg': "Deposit create", 'transaction': TransactionSerializer(transaction).data})
+        else:
+            return Response(status=400, data={'error_message': "Payment token not provided"})
 
 
 class ChangePasswordView(APIView):
@@ -471,12 +547,17 @@ class TriviaGameView(APIView):
 
         if not question.answered:
             if answer and answer == question.answer:
+                question.correct = True
                 question.answered = True
                 question.save()
                 return Response(data={"msg": "correct"})
 
             else:
+                question.correct = False
+                question.answered = True
+                question.save()
                 return Response(data={"msg": "wrong"})
+
 
         else:
             return Response(status=403, data={"error_message": "question already answered"})
@@ -500,7 +581,6 @@ class SudokuBoardGenerationView(APIView):
                 for _ in range(20):
                     sudoku_game = UserSudokuGame()
 
-
                     if user_details.level == 1:
                         easy_prob = .4
                         medium_prob = .75
@@ -513,7 +593,7 @@ class SudokuBoardGenerationView(APIView):
                         easy_prob = .2
                         medium_prob = .6
                     
-                    elif user_detials.level == 4:
+                    elif user_details.level == 4:
                         easy_prob = .1
                         medium_prob = .45
                     
@@ -530,35 +610,32 @@ class SudokuBoardGenerationView(APIView):
                         sudoku_game.difficulty = 'hard'
                         
                     sudoku_game.user = user
+                    
+                    board = Board()
+                    sudoku_game.board = board.random_board(sudoku_game.difficulty)
+                    sudoku_game.current_board = sudoku_game.board
                     sudoku_game.save()
             
             return Response(status=200, data={'msg': 'End-point setup successfully :)'})
 
         else:
-            return Response(status=402)
+            return Response(status=403)
 
-
-from .board import Board
 
 class UserSodokuGameView(APIView):
     permission_classes = [IsAuthenticated]
     authentication_classes = [TokenAuthentication]
     
     def get(self, request):
-        games = request.user.sudoku_game.all()
-        boards = []
+        game = UserSudokuGameSerializer(request.user.sudoku_game.filter(answered=False).first())
 
-        for game in games:
-            board = Board()
-            boards.append(board.random_board(game.difficulty))
-
-        return Response(status=200, data=boards)
+        return Response(status=200, data=game.data)
 
     def post(self, request):
         _id = request.data.get('id', None)
         cells = request.data.get('cells', None)
 
-        print(request.data)
+        print(request.data['id'])
 
         if not _id or not cells:
             return Response(status=403, data={"error_message": "Invalid game instance provided"})
@@ -568,13 +645,105 @@ class UserSodokuGameView(APIView):
             board = Board()
             
             if board.is_solved(cells):
+                sudoku_game.correct = True
                 if sudoku_game.answered:
                     return Response(status=403, data={"error_message": "Puzzle Already Solved"})
                 else:
                     sudoku_game.answered = True
+                    sudoku_game.save()
                     return Response(status=200, data={'msg': 'correct'})
                 
             else:
+                sudoku_game.correct = False
                 sudoku_game.answered = True
+                sudoku_game.save()
                 return Response(status=200, data={'msg': 'wrong'})
                 
+
+class SaveSudokuGameView(APIView):
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [TokenAuthentication]
+
+    def put(self, request):
+        _id = request.data.get('id', None)
+        board = request.data.get('board', None)
+        time = request.data.get('time', None)
+        
+        if _id and board:
+            game = request.user.sudoku_game.get(id=_id)
+            game.current_board = board
+            game.time = time
+            game.save()
+            return Response(data={"msg": "game saved".capitalize()})
+        return Response(data={'error_message': "incomplete lookup details".capitalize()})
+
+
+class ImagePuzzleGenerationView(APIView):
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [TokenAuthentication]
+
+    def post(self, request):
+        if request.user.is_staff:
+            if request.data['command'] == "retrieve":
+                req = [requests.get("https://api.unsplash.com/photos/random?count=30&client_id=q8dlboOTaYYPUnsOGmcud88O2KltjJSTqDBP18Ad6PA"),
+                        requests.get("https://api.unsplash.com/photos/random?count=30&client_id=q8dlboOTaYYPUnsOGmcud88O2KltjJSTqDBP18Ad6PA"),
+                        requests.get("https://api.unsplash.com/photos/random?count=30&client_id=q8dlboOTaYYPUnsOGmcud88O2KltjJSTqDBP18Ad6PA"),
+                        requests.get("https://api.unsplash.com/photos/random?count=10&client_id=q8dlboOTaYYPUnsOGmcud88O2KltjJSTqDBP18Ad6PA")]
+                data = [*req[0].json(), *req[1].json(), *req[2].json(), *req[3].json()]
+
+                for img in data:
+                    image_url = img['links']['html']
+                    image_puzzle = ImagePuzzleGame(image_url=image_url)
+                    image_puzzle.save()
+
+                return Response(status=200, data={'msg': "games retrieved successfully".capitalize()})
+
+
+            elif request.data['command'] == "create":
+                users = list(User.objects.filter(is_staff=False))
+
+                for user in users:
+                    image_puzzle_list = list(ImagePuzzleGame.objects.all())
+                    for _ in range(20):
+                        max_index = len(image_puzzle_list)-1
+                        random_index = random.randint(0, max_index)
+
+                        image_puzzle = image_puzzle_list[random_index]
+                        new_puzzle = UserImagePuzzleGame(user=user, image_url=image_puzzle.image_url)
+                        new_puzzle.save()
+                        
+                        del image_puzzle_list[random_index]
+                        max_index -= 1
+
+                return Response(status=200, data={'msg': "user image puzzles created successfully".capitalize()})
+
+            else:
+                return Response(status=400, data={'error_message': "invalid command".capitalize()})
+
+
+class ImagePuzzleGameView(APIView): 
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [TokenAuthentication]
+ 
+    def get(self, request):
+        image_puzzle = request.user.image_puzzle_game.filter(answered=False).first()
+        image_puzzle_serializer = UserImagePuzzleGameSerializer(image_puzzle)
+        return Response(data=image_puzzle_serializer.data, status=200)
+
+    def post(self, request):
+        _id = request.data.get('id', None)
+        correct = request.data.get('correct', None)
+
+        if _id and correct != None:
+            try:
+                game = request.user.image_puzzle_game.get(id=_id)
+                game.answered = True
+                game.correct = correct
+                game.save()
+                return Response(status=200)
+            except:
+                return Response(status=400, data={'error_message': "invalid user id".capitalize()})
+
+
+        else:
+            return Response(status=400, data={'error_message': "query parameters missing".capitalize()})

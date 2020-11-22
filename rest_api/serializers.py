@@ -1,7 +1,7 @@
 from rest_framework.serializers import ModelSerializer
 
 from django.contrib.auth.models import User
-from .models import UserDetail, News, UserTriviaGame, UserSudokuGame
+from .models import UserDetail, News, UserTriviaGame, UserSudokuGame, UserImagePuzzleGame, Transaction
 
 class UserSerializer(ModelSerializer):
 
@@ -23,7 +23,9 @@ class UserDetailSerializer(ModelSerializer):
                   'account_number',
                   'referral_count',
                   'create_date',
-                  'level']
+                  'level',
+                  'activated',
+                  'user']
 
 class NewsSerializer(ModelSerializer):
 
@@ -41,4 +43,16 @@ class UserSudokuGameSerializer(ModelSerializer):
 
     class Meta:
         model = UserSudokuGame
-        fields = ['id', 'difficulty', 'active', 'answered']
+        fields = ['id', 'board', 'current_board', 'time', 'difficulty', 'active', 'answered', 'created_date']
+
+class UserImagePuzzleGameSerializer(ModelSerializer):
+
+    class Meta:
+        model = UserImagePuzzleGame
+        fields = ['id', 'image_url', 'answered', 'time', 'created_date']
+
+class TransactionSerializer(ModelSerializer):
+
+    class Meta:
+        model = Transaction
+        fields = ['trans_type', 'amount', 'status', 'created_date']

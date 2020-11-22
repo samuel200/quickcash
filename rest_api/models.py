@@ -1,4 +1,6 @@
 from django.db import models
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 from django.contrib.auth.models import User
 from datetime import datetime
 
@@ -15,7 +17,7 @@ class UserDetail(models.Model):
     account_number = models.CharField(max_length=50, null=True, blank=True)
     level = models.IntegerField(default=1)
     create_date = models.DateTimeField(auto_now_add=True)
-    
+    activated = models.BooleanField(default=False)  
 
     def __str__(self):
         return self.user.username
@@ -58,6 +60,7 @@ class UserTriviaGame(models.Model):
     question = models.TextField()
     answer = models.CharField(max_length=250)
     options = models.TextField()
+    correct = models.BooleanField(default=False)
     answered = models.BooleanField(default=False)
     active = models.BooleanField(default=True)
     created_date = models.DateTimeField(auto_now_add=True)
@@ -69,9 +72,85 @@ class UserTriviaGame(models.Model):
 class UserSudokuGame(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="sudoku_game")
     difficulty = models.CharField(max_length=50)
+    board = models.CharField(max_length=200)
+    current_board = models.CharField(max_length=200, default="")
     answered = models.BooleanField(default=False)
+    correct = models.BooleanField(default=False)
+    time = models.IntegerField(default=1800)
     active = models.BooleanField(default=True)
     created_date = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return self.user.username
+    
+    def set_board_value(self, board):
+        self.board = board
+
+class ImagePuzzleGame(models.Model):
+    difficulty = models.CharField(max_length=50)
+    image_url = models.CharField(max_length=300)
+    active = models.BooleanField(default=True)
+    created_date = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.id
+
+class ImagePuzzleGame(models.Model):
+    image_url = models.CharField(max_length=300)
+    created_date = models.DateTimeField(auto_now_add=True)
+
+class UserImagePuzzleGame(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="image_puzzle_game")
+    image_url = models.CharField(max_length=300)
+    correct = models.BooleanField(default=False)
+    time = models.IntegerField(default=1800)
+    answered = models.BooleanField(default=False)
+    created_date = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return  self.user.username
+
+class Transaction(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="transaction")
+    trans_type = models.CharField(max_length=20)
+    amount = models.FloatField()
+    status = models.BooleanField(default=False)
+    created_date = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return  self.user.username
+
+
+@receiver(post_save, sender=Transaction)
+def implement_transaction(sender, instance, created, *args, **kwargs):
+    if instance.status == True:
+        amount = instance.amount
+        user_details = UserDetail.objects.get(user=instance.user)
+        if instance.trans_type == 'withdrawal':
+            amount -= user_details.referral_earnings
+            if amount <= 0:
+                user_details.referral_earnings = -amount
+            else:
+                amount -= user_details.game_earnings
+                user_details.referral_earnings = 0
+                user_details.game_earning = -amount
+        elif instance.trans_type == 'deposit':
+            if not user_details.activated:
+                amount -= 1000
+                user_details.activated = True
+                referree_details = UserDetail.objects.get(user=user_details.referee)
+                referree_details.referral_earnings += 1000
+                referree_details.save()
+
+            user_details.game_earnings += amount 
+        
+        user_details.save()
+
+@receiver(post_save, sender=UserDetail)
+def implement_referral_earning(sender, instance, created, *args, **kwargs):
+    if not instance.activated and instance.referral_earnings >= 1000:
+        instance.referral_earnings -= 1000
+        instance.activated = True
+        instance.save()
+
+            
