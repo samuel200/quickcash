@@ -12,10 +12,21 @@ import Auth from '../../Auth';
 
 function GameRoom() {
     const [loading, setLoading] = useState(true);
-    const authenticatedUser = Auth.authenticatedUser;
-    const {sudoku, trivia, image_puzzle} = authenticatedUser.games;
+    let authenticatedUser = Auth.authenticatedUser;
+    let {sudoku, trivia, image_puzzle} = authenticatedUser.games;
 
     useEffect(()=>{
+        fetch(`${domainName}/api/user`, {headers:{'Content-Type': 'application/json', 'Authorization': `Token ${Auth.authenticationToken}`}, method: 'GET'})
+            .then(res=>res.json())
+            .then(data=>{
+                Auth.authenticatedUser = data;
+                Auth.saveAuthObject();
+
+                sudoku = data.sudoku;
+                trivia = data.trivia;
+                image_puzzle = data.image_puzzle;
+            })
+            .catch(err=>alert("unable to update game progress"));
         setTimeout(()=>{
             $("#loader").animate({width: "500px", height: "500px", opacity: 0}, 300, ()=>{
                 $("#loader-background").animate({opacity: 0}, 500, ()=>{

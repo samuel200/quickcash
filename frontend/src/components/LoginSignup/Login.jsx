@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import $ from 'jquery';
 
 import './auth.css';
@@ -10,6 +10,7 @@ import Auth from '../../Auth';
 
 const Login = ({ history, showMessage }) => {
     const [ loading, setLoading ] = useState(false);
+
     const handleSubmit = e =>{
         setLoading(true);
         e.preventDefault();
@@ -23,16 +24,14 @@ const Login = ({ history, showMessage }) => {
                 showMessage("error", data.error_message)
             }else{
                 showMessage("success", "Login Successful");
-                setLoading(true);
                 Auth.login(data.key, ()=>{
-                    setLoading(false);
                     history.push('/dashboard/index');
-                });
+                })
             }
         })
         .catch(err=>{
             console.log(err);
-        })
+        }).finally(()=>setLoading(false))
     }
 
     return (
@@ -53,7 +52,7 @@ const Login = ({ history, showMessage }) => {
                     </div>
                 </div>
             </div>
-            {Auth.isAuthenticated && Auth.authenicationToken ? <Redirect to={ localStorage.getItem("currentPage") ? "/dashboard/" + localStorage.getItem("currentPage") : "/dashboard/index" }/> : ""}
+            {Auth.authenicationToken && Auth.isAuthenticated ? <Redirect to={ localStorage.getItem("currentPage") ? "/dashboard/" + localStorage.getItem("currentPage") : "/dashboard/index" }/> : ""}
         </PublicLayout>
     )
 }

@@ -24,10 +24,8 @@ function ManageProfile({ showMessage }) {
         fetch(`${domainName}/api/user`, { headers: { "Authorization": `Token ${Auth.authenticationToken}`, "Content-Type": "application/json" }, method: "PUT", body: JSON.stringify(body) })
             .then(response => response.json())
             .then(data => {
-                setTimeout(() => {
-                    Auth.authenticatedUser = data;
-                    Auth.saveAuthObject();
-                }, 2000)
+                Auth.authenticatedUser = data;
+                Auth.saveAuthObject();
                 setLoading(false);
                 showMessage("success", "Profile Updated")
             })
@@ -50,10 +48,8 @@ function ManageProfile({ showMessage }) {
         fetch(`${domainName}/api/user/account/`, { headers: { "Authorization": `Token ${Auth.authenticationToken}`, "Content-Type": "application/json" }, method: "PUT", body: JSON.stringify(body) })
             .then(response => response.json())
             .then(data => {
-                setTimeout(() => {
-                    Auth.authenticatedUser = data;
-                    Auth.saveAuthObject();
-                }, 2000)
+                Auth.authenticatedUser = data;
+                Auth.saveAuthObject();
                 setLoading(false);
                 showMessage("success", "Account Details Updated")
             })
@@ -81,7 +77,6 @@ function ManageProfile({ showMessage }) {
 
                 Auth.authenticatedUser = data;
                 Auth.saveAuthObject();
-                setLoading(false);
             })
             .catch(() => {
                 showMessage("error", "Error Occured While Uploading Profile Picture")

@@ -24,7 +24,7 @@ function DashboardLayout({children}) {
     return (
         <div className="layout">
             {loading ? <Loading /> : ""}
-            <DashboardNavigationBar />
+            <DashboardNavigationBar/>
             {Auth.authenticatedUser && !Auth.authenticatedUser.activated ? <Activation /> : <></>}
             {children}
             <Footer/>

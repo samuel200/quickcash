@@ -33,8 +33,6 @@ import SudokuGame from "./components/GameRoomPage/SudokuGame/js/index";
 import TriviaGame from "./components/GameRoomPage/TriviaGame/TriviaGame";
 import ImagePuzzleGame from "./components/GameRoomPage/ImagePuzzleGame/ImagePuzzleGame";
 import Auth from "./Auth";
-// import WordSearchGame from "./components/GameRoomPage/WordSearchGame/WordSearchGame";
-// import GameComponent from "./components/GameRoomPage/WordSearchGame/entry"
 
 const NewsSectionComponents = (news) => {
   return (
@@ -54,60 +52,70 @@ const NewsSectionComponents = (news) => {
 };
 
 const DashboardComponent = (props) => {
-  const changeCurrentPage = (page) => {
-    localStorage.setItem("currentPage", page);
+  let page = <></>;
+  const {match} = props;
+  const changeCurrentPage = (pageName) => {
+    localStorage.setItem("currentPage", pageName);
   };
 
-  const { match, showMessage } = props;
-  let page = <></>;
-
-  // useEffect(()=>{
-  // }, [])
   switch (match.params.page) {
     case "index":
       changeCurrentPage(match.params.page);
-      page = <Dashboard />;
+      page = (
+        <Dashboard {...props} />
+      );
       break;
 
     case "wallet":
       changeCurrentPage(match.params.page);
-      page = <Wallet showMessage={showMessage} />;
+      page = (
+        <Wallet
+          {...props} />
+      );
       break;
 
     case "referrals":
       changeCurrentPage(match.params.page);
-      page = <Referral />;
+      page = <Referral {...props} />;
       break;
 
     case "manage":
       changeCurrentPage(match.params.page);
-      page = <ManageProfile showMessage={showMessage} />;
+      page = (
+        <ManageProfile {...props} />
+      );
       break;
 
     case "activities":
       changeCurrentPage(match.params.page);
-      page = <Activities />;
+      page = (
+        <Activities {...props} />
+      );
       break;
 
     case "game-room":
       changeCurrentPage(match.params.page);
-      page = <GameRoom />;
+      page = <GameRoom {...props} />;
       break;
 
     case "game":
       page = (
         <Route
           path="/dashboard/game/:page"
-          render={(props) => <GamesComponent {...props} />}
+          render={(props) => (
+            <GamesComponent {...props} />
+          )}
         />
       );
       break;
 
     default:
-      page = <Dashboard />;
+      page = (
+        <Dashboard {...props} />
+      );
   }
 
-  return page;
+  return page
 };
 
 const GamesComponent = (props) => {
@@ -160,7 +168,6 @@ const ToTopSectionComponents = ({ showMessage, news }) => (
       component={DashboardComponent}
       showMessage={showMessage}
     />
-    {/* <Route path="/dashboard/" exact render={props=> <Redirect to="/dashboard/index"/>}/> */}
     <Route
       path="/dashboard"
       exact

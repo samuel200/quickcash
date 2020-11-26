@@ -16,19 +16,15 @@ const ImagePuzzleGame = ({ history }) => {
     const [paused, setPaused] = useState(false);
     const [inGame, setInGame] = useState(false);
     const [message, setMessage] = useState({ type: false, message: "wrong" });
-    let authenticatedUser, token;
 
     useEffect(() => {
         const elems = document.querySelectorAll('.modal');
         window.M.Modal.init(elems, {});
         const instance = window.M.Modal.getInstance(document.querySelector('#img-puzzle-about'));
 
-        authenticatedUser = Auth.authenticatedUser;
-        token = Auth.authenticationToken;
-
         if (!hasGame) {
             setLoading(true);
-            fetch(`${domainName}/api/user/game/image-puzzle`, { headers: { "Content-Type": "application/json", "Authorization": `Token ${token}` }, method: "GET" })
+            fetch(`${domainName}/api/user/game/image-puzzle`, { headers: { "Content-Type": "application/json", "Authorization": `Token ${Auth.authenticationToken}` }, method: "GET" })
                 .then(res => res.json())
                 .then(data => {
                     setGame(data);
@@ -42,6 +38,16 @@ const ImagePuzzleGame = ({ history }) => {
                 .finally(() => {
                     setLoading(false);
                 })
+        }
+
+        if(pageName !== 'game' && Auth.authenticationToken){
+            fetch(`${domainName}/api/user`, {headers:{'Content-Type': 'application/json', 'Authorization': `Token ${Auth.authenticationToken}`}, method: 'GET'})
+            .then(res=>res.json())
+            .then(data=>{
+                Auth.authenticatedUser = data;
+                Auth.saveAuthObject();
+            })
+            .catch(err=>alert("unable to update game progress"));
         }
 
         switch (pageName) {
@@ -66,10 +72,10 @@ const ImagePuzzleGame = ({ history }) => {
             default:
                 setPage(<GameIndex name="Image Puzzle"
                     icon={require("../../../img/gaming.png")}
-                    percentage={(authenticatedUser.games.image_puzzle / 20) * 100}
-                    progress={`${authenticatedUser.games.image_puzzle}/20`}
+                    percentage={(Auth.authenticatedUser.games.image_puzzle / 20) * 100}
+                    progress={`${Auth.authenticatedUser.games.image_puzzle}/20`}
                     startGame={() => {
-                        if (authenticatedUser.games.image_puzzle < 20) {
+                        if (Auth.authenticatedUser.games.image_puzzle < 20) {
                             if (!game) {
                                 setHasGame(false);
                             } else {
@@ -108,14 +114,13 @@ const ImagePuzzleGame = ({ history }) => {
         const { id } = game;
 
         setLoading(true);
-        fetch(`${domainName}/api/user/game/image-puzzle`, { headers: { "Content-Type": "application/json", "Authorization": `Token ${token}` }, method: "POST", body: JSON.stringify({ id, correct }) })
+        fetch(`${domainName}/api/user/game/image-puzzle`, { headers: { "Content-Type": "application/json", "Authorization": `Token ${Auth.authenticationToken}` }, method: "POST", body: JSON.stringify({ id, correct }) })
             .then(res => res.json())
             .then(data => {
-                console.log(data.msg);
                 if (data.msg) {
                     setMessage({ type: correct, message: correct ? "correct" : "wrong" });
                     setAnswered(true);
-                    Auth.authenticatedUser.games.image_puzzle += 1;
+                    Auth.authenticatedUser = {...Auth.authenticatedUser, games: {...Auth.authenticatedUser.games, image_puzzle: Auth.authenticatedUser.games.image_puzzle + 1}}
                     Auth.saveAuthObject();
                 } else if (data.error_message) {
                     alert(data.error_message);
@@ -148,7 +153,7 @@ const ImagePuzzleGame = ({ history }) => {
                         <Message type={message.type} message={message.message} />
                         <div className="row">
                             <div className="col l6 m6 s6">
-                                {Auth.authenticatedUser.games.image_puzzle < 19 && inGame ? <div className="container">
+                                {Auth.authenticatedUser.games.image_puzzle < 20 && inGame ? <div className="container">
                                     <button className="btn green lighten-2" onClick={setNewQuestion}>Continue</button>
                                 </div> : <></>}
                             </div>
@@ -158,6 +163,7 @@ const ImagePuzzleGame = ({ history }) => {
                                         setPageName("index");
                                         setInGame(false);
                                         setPaused(false);
+                                        setAnswered(true);
                                     }}>Exit</button>
                                 </div>
                             </div>

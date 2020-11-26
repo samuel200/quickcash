@@ -1,48 +1,35 @@
-import React, { createContext, useReducer } from 'react';
+import React, { createContext, useReducer, useEffect, useState } from "react";
+import Auth from "../Auth";
 
 export const context = createContext();
 
-const defaultTokenValue = localStorage.getItem('authenticationToken');
-const defaultUserValue = JSON.parse(localStorage.getItem('authenticatedUser'));
-const defaultLoggedIn = JSON.parse(localStorage.getItem('loggedIn'));
+const initialState = JSON.parse(localStorage.getItem('savedAuthObject')) || {authenticatedUser: null, authenticationToken: null, isAuthenticated: null};
 
-const initialState = {
-    token: defaultTokenValue ? defaultTokenValue : null,
-    authenticatedUser: defaultUserValue ? defaultUserValue : null,
-    loggedIn: defaultLoggedIn ? defaultLoggedIn : false
-}
+const userReducer = (action, state) => {
+  switch (action.type) {
+    case "LOGIN_USER":
+      return {...state, ...(JSON.parse(localStorage.getItem('savedAuthObject')))};
 
-const userReducer = (action, state)=>{
-    switch(action.type){
-        case "LOGIN_USER":
-            localStorage.setItem("loggedIn", JSON.stringify(action.payload));
-            return {...state, loggedIn: action.payload}
+    case "UPDATE_USER":
+      return {...state, ...(JSON.parse(localStorage.getItem('savedAuthObject')))};
 
-        case "UPDATE_USER":
-            localStorage.setItem("authenticatedUser", JSON.stringify(action.payload))
-            return {...state, authenticatedUser: action.payload}
-            
-        case "UPDATE_TOKEN":
-            localStorage.setItem("authenticationToken", action.payload)
-            return {...state, token: action.payload}
 
-        case "LOGOUT_USER":
-            localStorage.removeItem("authenticationToken");
-            localStorage.removeItem("authenticatedUser");
-            localStorage.removeItem("loggedIn");
-            return {loggedIn: false, authenticatedUser: null, authenticationToken: null}
+    case "UPDATE_TOKEN":
+      return { ...state, token: action.token };
 
-        default:
-            return state
-    }
+    case "LOGOUT_USER":
+      return {...state, ...(JSON.parse(localStorage.getItem('savedAuthObject')))};
 
-}
+    default:
+      return state;
+  }
+};
 
-export const UserProvider = ({children})=>{
-    const [state, dispatch] = useReducer(userReducer, initialState);
-    return(
-        <context.Provider value={{state, dispatch}}>
-            {children}
-        </context.Provider>
-    )
-}
+export const UserProvider = ({ children }) => {
+  const [state, dispatch] = useReducer(userReducer, initialState);
+  useEffect(() => {
+  }, [state]);
+  return (
+    <context.Provider value={{ state, dispatch }}>{children}</context.Provider>
+  );
+};

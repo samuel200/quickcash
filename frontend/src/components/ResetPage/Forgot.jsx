@@ -34,7 +34,7 @@ const Forgot = ({ showMessage }) => {
         <PublicLayout>
             {loading ? <FormLoader /> : ""}
             <div className="contact-page">
-                <div id="auth-form-holder">
+                <div id="auth-form-holder" style={{padding: "80px 0px"}}>
                     <form onSubmit={ handleSubmit }>
                         <h2>Forgot Password</h2>
                         <input type="email" placeholder="Email" name="email" />

@@ -18,6 +18,9 @@ class Auth{
         }else if(!savedAuthObject){
             localStorage.setItem('savedAuthObject', JSON.stringify(this.resetAuth()))
         }
+        if(this.authenticationToken){
+            this.login(this.authenticationToken, ()=>{})
+        }
         this.saveAuthObject();
     }
 
@@ -36,7 +39,7 @@ class Auth{
                     this.authenticatedUser = data;
                     this.isAuthenticated = true;
                     this.saveAuthObject();
-                    cb();
+                    cb(data);
                 }
             })
             .catch(err=>{
@@ -68,5 +71,6 @@ class Auth{
         localStorage.setItem('savedAuthObject', JSON.stringify(savedAuthObject));
     }
 }
+
 
 export default new Auth();

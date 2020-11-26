@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useContext, useEffect, useRef } from 'react';
 import { withRouter } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 import { faBars } from "@fortawesome/free-solid-svg-icons";
@@ -13,7 +13,7 @@ const DashboardNavigationBar = ({ history }) => {
         e.preventDefault();
         Auth.logout(()=>{
             history.push('/signin');
-        })
+        });
     }
 
     const links = [
@@ -35,7 +35,7 @@ const DashboardNavigationBar = ({ history }) => {
             <nav className="home-nav">
                 <div className="nav-wrapper">
                     <Link to="/" className="brand-logo left">Quick Cash</Link>
-                    <Link to="#" data-target="mobile-demo" className="sidenav-trigger right"><FontAwesomeIcon icon={faBars} style={{color: "white", fontSize: "18px"}}/></Link>
+                    <Link to="#" data-target="mobile-demo" className="sidenav-trigger right"><FontAwesomeIcon icon={faBars} style={{color: "white", fontSize: "24px"}}/></Link>
                     <ul className="right hide-on-med-and-down">
                         {
                             links.map(({ name, to }) => {

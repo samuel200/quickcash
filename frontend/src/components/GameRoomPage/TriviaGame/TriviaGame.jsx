@@ -39,9 +39,19 @@ const TriviaGame = ({ history }) => {
                 .finally(() => setLoading(false))
         }
 
+        if (pageName !== 'game' && Auth.authenticationToken) {
+            fetch(`${domainName}/api/user`, { headers: { 'Content-Type': 'application/json', 'Authorization': `Token ${Auth.authenticationToken}` }, method: 'GET' })
+                .then(res => res.json())
+                .then(data => {
+                    Auth.authenticatedUser = data;
+                    Auth.saveAuthObject();
+                })
+                .catch(err => alert("unable to update game progress"));
+        }
+
         switch (pageName) {
             case 'game':
-                setPage( authenticatedUser.games.trivia < 20 ?
+                setPage(authenticatedUser.games.trivia < 20 ?
                     <div id="trivia-game">
                         <div className="trivia-question-holder">
                             <h2><b>{authenticatedUser.games.trivia + 1}. </b>{questions[authenticatedUser.games.trivia].question}</h2>
@@ -66,7 +76,7 @@ const TriviaGame = ({ history }) => {
                                 </div>
                             </div>
                         </form>
-                    </div> : <Redirect to="/dashboard/game/trivia"/>)
+                    </div> : <Redirect to="/dashboard/game/trivia" />)
                 break;
 
             default:
@@ -103,6 +113,8 @@ const TriviaGame = ({ history }) => {
                 return () => clearInterval(interval);
             }
         }
+
+
     }, [loading, time, answered, pageName, hasNext])
 
     const delayedFunc = (cb, arg, time) => {
@@ -148,7 +160,7 @@ const TriviaGame = ({ history }) => {
 
     const setNewQuesition = () => {
         const count = authenticatedUser.games.trivia;
-        if (authenticatedUser.games.trivia === questions.length-1) {
+        if (authenticatedUser.games.trivia === questions.length - 1) {
             setHasNext(false);
         } else {
             setAnswered(false);

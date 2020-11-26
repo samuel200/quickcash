@@ -1,106 +1,34 @@
 import React, { useState } from 'react';
 import $ from 'jquery';
-import { CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
+import { PaystackButton } from 'react-paystack';
 
 import DashboardLayout from '../DashboardLayout';
 import DashboardInfo from '../DashboardPage/DashboardInfo';
 import FormLoader from '../FormLoader';
 import domainName from '../../DomainName';
-import { Elements } from '@stripe/react-stripe-js';
-import { loadStripe } from '@stripe/stripe-js';
 import Auth from '../../Auth';
-
-// Make sure to call `loadStripe` outside of a component’s render to avoid
-// recreating the `Stripe` object on every render.
-const stripePromise = loadStripe('pk_test_tt2Rmb4Z5ptgh9Bdy1iXzYxV008NonLVne');
-
-const CheckoutForm = ({ changeLoading, showMessage }) => {
-    const stripe = useStripe();
-    const elements = useElements();
-    const [amount, setAmount] = useState();
-
-    const handleSubmit = async (event) => {
-        // Block native form submission.
-        event.preventDefault();
-
-        if (!stripe || !elements) {
-            // Stripe.js has not loaded yet. Make sure to disable
-            // form submission until Stripe.js has loaded.
-            return;
-        }
-
-        // Get a reference to a mounted CardElement. Elements knows how
-        // to find your CardElement because there can only ever be one of
-        // each type of element.
-        const card = elements.getElement(CardElement);
-
-        // Use your card Element with other Stripe.js APIs
-        const result = await stripe.createToken(card);
-
-        if (result.error) {
-            console.log('[error]', result.error);
-        } else {
-            if(amount >= 1000){
-                changeLoading(true);
-                fetch(`${domainName}/api/user/deposit`, {headers:{'Content-Type': "application/json", 'Authorization': `Token ${Auth.authenticationToken}`}, method: "POST", body: JSON.stringify({stripeToken: result.token.id, amount})})
-                .then(res=>res.json())
-                .then(data=>{
-                    if(data.error_message){
-                        showMessage({type: false, message: data.error_message})
-                    }else if(data.msg){
-                        Auth.authenticatedUser = {...Auth.authenticatedUser, game_earnings: Auth.authenticatedUser.game_earnings + data.transaction.amount, transaction: [...Auth.authenticatedUser.transaction, data.transaction]};
-                        Auth.saveAuthObject();
-                        showMessage({type: true, message: data.msg}) 
-                    }
-                })
-                .catch(err=>console.log(err))
-                .finally(()=>{
-                    changeLoading(false);
-                })
-            }else{
-                showMessage('error', "The minimum deposit amount is ₦1000")
-            }
-        }
-    };
-
-    return (
-        <form onSubmit={handleSubmit}>
-            <input type="text" name="ammount" placeholder="Enter Ammount" onChange={e=>{
-                setAmount(parseFloat(e.target.value));
-            }}/>
-            <div className="container" style={{
-                background: "white",
-                borderRadius: "5px",
-                padding: "10px",
-                marginLeft: "0px",
-                marginBottom: "10px"
-            }}>
-                <CardElement
-                    options={{
-                        style: {
-                            base: {
-                                fontSize: '16px',
-                                color: '#424770',
-                                height: '80px',
-                                marginBottom: "10px",
-                                '::placeholder': {
-                                    color: '#aab7c4',
-                                },
-                            },
-                            invalid: {
-                                color: '#9e2146',
-                            },
-                        },
-                    }}
-                />
-            </div>
-            <button type="submit" disabled={!stripe}>Make Deposit</button>
-        </form>
-    )
-}
 
 function Wallet({ showMessage }) {
     const [loading, setLoading] = useState(false);
+    const [disabled, setDisabled] = useState(true);
+    const [amount, setAmount] = useState(0);
+    const [error, setError] = useState(null)
+    const [paymentParams, setPaymentParams] = useState({
+        email: Auth.authenticatedUser.email,
+        amount: 0,
+        text: "Make Deposit",
+        publicKey: "pk_test_22327c6d1340ad6d5b5580e465df1942e983c192",
+        channels: ['card'],
+        currency: 'NGN',
+        onClose: () => {
+            if(error){
+                window.M.toast({ html: "Payment Failed", classes: "red white-text" })
+            }else{
+                showMessage('success', "Payment Successful")
+            }
+            setError(null);
+        }
+    });
 
     const handleWithdrawalRequest = e => {
         e.preventDefault();
@@ -108,7 +36,7 @@ function Wallet({ showMessage }) {
         const input = inputElement.val();
         let inputVal = input === '' ? 0 : parseFloat(input);
         setLoading(true);
-        fetch(`${domainName}/api/user/withdrawal`, { headers: { "Content-Type": "application/json", "Authorization": `Token ${ Auth.authenticationToken }` }, body: JSON.stringify({ amount: inputVal }), method: "POST" })
+        fetch(`${domainName}/api/user/withdrawal`, { headers: { "Content-Type": "application/json", "Authorization": `Token ${Auth.authenticationToken}` }, body: JSON.stringify({ amount: inputVal,  }), method: "POST" })
             .then(res => res.json())
             .then(data => {
                 if (data.error_message) {
@@ -135,9 +63,43 @@ function Wallet({ showMessage }) {
             <section className="dashboard-info-section">
                 <h2>Make Deposit</h2>
                 <p>The minimum ammount that can be deposited is ₦1000</p>
-                <Elements stripe={stripePromise}>
-                    <CheckoutForm showMessage={showMessage} changeLoading={bool=>setLoading(bool)}/>
-                </Elements>
+                <form onSubmit={e=>e.preventDefault()}>
+                    <input type="text" name="ammount" placeholder="Enter Ammount" onChange={e => {
+                        const inputAmount = parseFloat(e.target.value) * 100 || 0;
+                        setAmount(inputAmount);
+                        if(inputAmount >= 100000){
+                            setPaymentParams({...paymentParams, amount: inputAmount});
+                            setDisabled(false);
+                        }else{
+                            setDisabled(true);
+                            setAmount(0);
+                        }
+                    }} />
+                    {disabled ? <button onClick={()=>{
+                        if(amount < 100000){
+                            showMessage('error', "Minimum amount that can be deposited is ₦1000");
+                        }
+                    }}>Make Deposit</button> :
+                    <PaystackButton {...({
+                        ...paymentParams, onSuccess: (response) => {
+                            setLoading(true);
+                            fetch(`${domainName}/api/user/deposit`, {method: 'POST', headers:{'Content-Type': "application/json", "Authorization": `Token ${Auth.authenticationToken}`}, body: JSON.stringify({ref: response.reference, amount})})
+                                .then(res=>res.json())
+                                .then(data => {
+                                    Auth.authenticatedUser = {...Auth.authenticatedUser, transactions: [...Auth.authenticatedUser.transactions, data.transaction]}
+                                })
+                                .catch(err => {
+                                    setError(err);
+                                    console.log(err)
+                                    window.M.toast({ html: "Payment Failed", classes: "red white-text" });
+                                })
+                                .finally(()=>{
+                                    setLoading(false);
+                                })
+
+                        },
+                    })} />}
+                </form>
             </section>
             <section className="dashboard-info-section">
                 <h2>Make Withdraw Request</h2>

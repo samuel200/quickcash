@@ -110,11 +110,14 @@ class UserImagePuzzleGame(models.Model):
     def __str__(self):
         return  self.user.username
 
+Transaction_Choices = (('withdrawal', 'w'), ('deposit', 'd'))
+
 class Transaction(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="transaction")
-    trans_type = models.CharField(max_length=20)
+    trans_type = models.CharField(max_length=10, choices=Transaction_Choices)
     amount = models.FloatField()
     status = models.BooleanField(default=False)
+    used = models.BooleanField(default=False)
     created_date = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -123,28 +126,32 @@ class Transaction(models.Model):
 
 @receiver(post_save, sender=Transaction)
 def implement_transaction(sender, instance, created, *args, **kwargs):
-    if instance.status == True:
-        amount = instance.amount
-        user_details = UserDetail.objects.get(user=instance.user)
-        if instance.trans_type == 'withdrawal':
-            amount -= user_details.referral_earnings
-            if amount <= 0:
-                user_details.referral_earnings = -amount
+    if instance.status == True and not instance.used:
+        user_detail = UserDetail.objects.get(user=instance.user)
+        if user_detail.activated:
+            if instance.trans_type == "deposit":
+                user_detail.game_earnings += instance.amount
             else:
-                amount -= user_details.game_earnings
-                user_details.referral_earnings = 0
-                user_details.game_earning = -amount
-        elif instance.trans_type == 'deposit':
-            if not user_details.activated:
-                amount -= 1000
-                user_details.activated = True
-                referree_details = UserDetail.objects.get(user=user_details.referee)
-                referree_details.referral_earnings += 1000
-                referree_details.save()
-
-            user_details.game_earnings += amount 
+                user_detail.game_earnings -= instance.amount
         
-        user_details.save()
+        else:
+            amount = instance.amount
+            if instance.trans_type == "deposit":
+                amount -= 1000
+                if amount > 0:
+                    amount -= user_detail.referral_earnings
+                    if amount < 0:
+                        user_detail.referral_earnings = -amount
+                    else:
+                        user_detail.game_earnings -= amount
+                referee = UserDetail.objects.get(user=user_detail.referree)
+                referee.referral_earnings += 1000
+                referee.save()
+                user_detail.activated = True
+
+        instance.used = True
+        instance.save()
+        user_detail.save()
 
 @receiver(post_save, sender=UserDetail)
 def implement_referral_earning(sender, instance, created, *args, **kwargs):

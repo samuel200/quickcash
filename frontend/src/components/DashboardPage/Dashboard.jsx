@@ -6,7 +6,6 @@ import DashboardInfo from './DashboardInfo';
 import Auth from '../../Auth';
 
 function Dashboard() {
-    console.log(Auth);
     return (
         <DashboardLayout>
             <DashboardInfo authenticatedUser={ Auth.authenticatedUser }/>

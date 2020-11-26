@@ -5,7 +5,7 @@ import DashboardLayout from '../DashboardLayout';
 function Activities() {
     return (
         <DashboardLayout>
-            <div className="row" style={{padding: "80px !important"}}>
+            <div className="row" style={{padding: "60px 0px"}}>
                 <div className="col l6 m12 s12 container">
                     <div className="dashboard-info-section activity-card">
                         <img src={require("../../img/interface (3).png")} alt="interface"/>

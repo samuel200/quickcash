@@ -18,11 +18,11 @@ from .models import UserDetail, News, TriviaGame, UserTriviaGame, UserSudokuGame
 from .serializers import *
 from .board import Board
 
-import stripe
 import requests
 import json
+from functools import reduce
 
-stripe_secret_key = "sk_test_sXkDKWHNGkTCr4ecv5dT1Tgr00Cx4zpeTC"
+paystack_secret_key = "sk_test_18b85ab7edeafba253bed5203248fa8dd2f21a65"
 
 # Create your views here.
 @api_view(['GET'])
@@ -224,12 +224,17 @@ class WithdrawalView(APIView):
         amount = request.data.get('amount', None)
         user_detail = UserDetail.objects.get(user=request.user)
         total_earnings = user_detail.referral_earnings + user_detail.game_earnings
+        pending_withdrawals = Transaction.objects.filter(trans_type='withdrawal', status=False)
+        total_pending_amount = reduce(lambda x, y: x.amount + y.amount, list(pending_withdrawals)) if pending_withdrawals.count() > 0 else Transaction(amount=0)
+        amount_left = total_earnings - total_pending_amount.amount
 
         if amount:
             if amount < 5000:
                 return Response(status=200, data={'error_message': "Amount is less than minimum withdrawal limit"})
             elif amount > total_earnings:
                 return Response(status=200, data={'error_message': "Amount is higher than your total earnings"})
+            elif amount >= amount_left:
+                return Response(status=200, data={'error_message': "Due to pending withdrawals this request can not be processed"})
             else:
                 withdrawal = Transaction(user= request.user, trans_type="withdrawal", amount=amount)
                 withdrawal_serializer = TransactionSerializer(withdrawal)
@@ -244,22 +249,22 @@ class DepositView(APIView):
     authentication_classes = [TokenAuthentication]
 
     def post(self, request):
-        stripeToken = request.data.get('stripeToken', None)
+        reference = request.data.get('ref', None)
         amount = request.data.get('amount', None)
-        print(stripeToken, amount)
 
-        if stripeToken and amount:
+        if reference and amount:
             try:
-                customer = stripe.Customer.create(api_key=stripe_secret_key, 
-                                        name=request.user.first_name,
-                                        email=request.user.email)
-                charge = stripe.Charge.create(api_key=stripe_secret_key, customer=customer, currency="usd", amount=amount*100, description="Quick cash game earning top up", source=stripeToken)
+                req = requests.get(f"https://api.paystack.co/transaction/verify/{reference}", headers={'Authorization': f"Bearer {paystack_secret_key}"})
+                res = req.json()
+                if res['status']:
+                    transaction = Transaction(amount=amount/100, trans_type="deposit", user=request.user, status=True)
+                    transaction.save()
+                    return Response(status=200, data={'msg': "Deposit create", 'transaction': TransactionSerializer(transaction).data})
+                else:
+                    return Response(status=500)
             except:
                 return Response(status=400, data={'error_message': 'error making payment'.capitalize()})
-
-            transaction = Transaction(amount=amount, trans_type="deposit", user=request.user, status=True)
-            transaction.save()
-            return Response(status=200, data={'msg': "Deposit create", 'transaction': TransactionSerializer(transaction).data})
+            # return Response()
         else:
             return Response(status=400, data={'error_message': "Payment token not provided"})
 
@@ -740,7 +745,7 @@ class ImagePuzzleGameView(APIView):
                 game.answered = True
                 game.correct = correct
                 game.save()
-                return Response(status=200)
+                return Response(status=200, data={'msg': 'correct' if correct else 'wrong'})
             except:
                 return Response(status=400, data={'error_message': "invalid user id".capitalize()})
 
